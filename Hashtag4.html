@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>HashTag App</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f5f5f5; margin: 0; padding: 0; }
+        header { background: #0078d7; color: #fff; padding: 1rem; text-align: center; }
+        main { padding: 2rem; }
+        button { margin: 0.2rem; }
+        #adminPanel, #userPanel { background: #fff; border: 1px solid #0078d7; padding: 1rem; margin-top: 1rem; }
+        #pendingPostsSection, #approvedPostsSection { margin-top: 2rem; }
+        textarea { width: 100%; min-height: 60px; }
+        ul { padding-right: 1.5rem; }
+        input[type="text"], input[type="email"], input[type="password"] { margin: 0.2rem 0; padding: 0.3rem; width: 220px; }
+        select { margin: 0.2rem 0; }
+        .section-title { background: #eee; color: #0078d7; padding: 7px 0; margin: 20px 0 7px 0; border-radius: 6px; font-size: 20px; }
+        #sectionsBar {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .section-btn {
+            background: #fff;
+            color: #0078d7;
+            border: 1px solid #0078d7;
+            border-radius: 5px;
+            padding: 6px 18px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .section-btn.active, .section-btn:hover {
+            background: #0078d7;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <!-- شريط الأقسام -->
+        <div id="sectionsBar">
+            <button class="section-btn" onclick="selectSection('تصاميم')">تصاميم</button>
+            <button class="section-btn" onclick="selectSection('حاسبات')">حاسبات</button>
+            <button class="section-btn" onclick="selectSection('قرطاسية')">قرطاسية</button>
+            <button class="section-btn" onclick="selectSection('هدايا')">هدايا</button>
+            <button class="section-btn" onclick="selectSection('العاب')">العاب</button>
+        </div>
+        <div id="mainPageImageContainer" style="text-align:center; margin:10px 0;">
+            <img id="mainPageImage" src="" alt="صورة الصفحة" style="max-width:350px; border-radius:10px; display:none;">
+        </div>
+        <h1>HashTag</h1>
+    </header>
+
+    <main>
+        <p>مرحباً بكم في HashTag!</p>
+        <button onclick="showAdminRegister()">تسجيل ادمن جديد</button>
+        <button onclick="showAdminLogin()">دخول الادمن</button>
+        <button onclick="showUserRegister()">تسجيل يوزر جديد</button>
+        <button onclick="showUserLogin()">دخول يوزر</button>
+
+        <!-- نموذج تسجيل الادمن -->
+        <div id="adminRegister" style="display:none; margin-top:1rem;">
+            <input type="email" id="adminEmailReg" placeholder="البريد الإلكتروني للادمن"><br>
+            <input type="password" id="adminPassReg" placeholder="كلمة مرور الادمن"><br>
+            <button onclick="registerAdmin()">تسجيل</button>
+            <span id="adminRegisterMsg" style="color:green;"></span>
+        </div>
+
+        <!-- نموذج دخول الادمن -->
+        <div id="adminLogin" style="display:none; margin-top:1rem;">
+            <input type="email" id="adminEmailLogin" placeholder="البريد الإلكتروني للادمن"><br>
+            <input type="password" id="adminPassLogin" placeholder="كلمة مرور الادمن"><br>
+            <button onclick="adminLogin()">دخول</button>
+            <span id="adminLoginMsg" style="color:red;"></span>
+        </div>
+
+        <!-- لوحة تحكم الادمن -->
+        <div id="adminPanel" style="display:none;">
+            <h2>لوحة تحكم الادمن</h2>
+            <button onclick="logoutAdmin()">تسجيل خروج</button>
+            <!-- تغيير صورة الصفحة الرئيسية -->
+            <div style="margin:15px 0;">
+                <h3>تغيير صورة الصفحة الرئيسية:</h3>
+                <input type="file" id="mainImageInput" accept="image/*">
+                <button onclick="changeMainPageImage()">تغيير الصورة</button>
+                <span id="mainImageMsg" style="color:green;"></span>
+            </div>
+            <div id="pendingPostsSection">
+                <h3>منشورات بانتظار الموافقة:</h3>
+                <div id="pendingPostsBySection"></div>
+            </div>
+            <!-- نشر منشور نصي أو صورة في قسم معين -->
+            <div id="adminImageUpload" style="margin-top:1rem;">
+                <h3>نشر منشور جديد في قسم:</h3>
+                <select id="adminSectionSelect">
+                    <option value="تصاميم">قسم التصاميم</option>
+                    <option value="حاسبات">قسم الحاسبات</option>
+                    <option value="قرطاسية">قسم القرطاسية</option>
+                    <option value="هدايا">قسم الهدايا</option>
+                    <option value="العاب">قسم الألعاب</option>
+                </select><br>
+                <textarea id="adminPostText" placeholder="اكتب منشورك هنا (اختياري)"></textarea><br>
+                <input type="file" id="adminImageInput" accept="image/*"><br>
+                <input type="text" id="imageText" placeholder="اكتب نص على الصورة (اختياري)">
+                <button onclick="adminUploadPost()">نشر</button>
+                <span id="adminImageMsg" style="color:green;"></span>
+            </div>
+        </div>
+
+        <!-- نموذج تسجيل اليوزر -->
+        <div id="userRegister" style="display:none; margin-top:1rem;">
+            <input type="email" id="userEmailReg" placeholder="البريد الإلكتروني"><br>
+            <input type="password" id="userPassReg" placeholder="كلمة المرور"><br>
+            <button onclick="registerUser()">تسجيل</button>
+            <span id="userRegisterMsg" style="color:green;"></span>
+        </div>
+
+        <!-- نموذج دخول اليوزر -->
+        <div id="userLogin" style="display:none; margin-top:1rem;">
+            <input type="email" id="userEmailLogin" placeholder="البريد الإلكتروني"><br>
+            <input type="password" id="userPassLogin" placeholder="كلمة المرور"><br>
+            <button onclick="loginUser()">دخول</button>
+            <span id="userLoginMsg" style="color:red;"></span>
+        </div>
+
+        <!-- لوحة المستخدم -->
+        <div id="userPanel" style="display:none;">
+            <h2>لوحة المستخدم</h2>
+            <select id="userSectionSelect">
+                <option value="تصاميم">قسم التصاميم</option>
+                <option value="حاسبات">قسم الحاسبات</option>
+                <option value="قرطاسية">قسم القرطاسية</option>
+                <option value="هدايا">قسم الهدايا</option>
+                <option value="العاب">قسم الألعاب</option>
+            </select><br>
+            <textarea id="userPost" placeholder="اكتب منشورك هنا"></textarea><br>
+            <input type="file" id="userImageInput" accept="image/*"><br>
+            <input type="text" id="userImageText" placeholder="اكتب نص فوق الصورة (اختياري)">
+            <button onclick="submitUserPost()">نشر</button>
+            <span id="userPostMsg" style="color:green;"></span>
+            <br>
+            <button onclick="logoutUser()">تسجيل خروج</button>
+        </div>
+
+        <!-- المنشورات المقبولة لكل قسم (تظهر حسب القسم المختار) -->
+        <div id="approvedPostsSection">
+            <h3>المنشورات المقبولة:</h3>
+            <div id="approvedPostsBySection"></div>
+        </div>
+
+        <!-- سلايدر الإعلانات للعامة -->
+        <div id="adsSlider" style="margin:20px 0; text-align:center;">
+            <h3>لوحة الإعلانات</h3>
+            <div id="adsSliderContainer" style="width:300px; height:180px; margin:auto; border:1px solid #ccc; border-radius:8px; overflow:hidden; background:#fff; display:flex; align-items:center; justify-content:center;">
+                <img id="adsSliderImg" src="" alt="إعلان" style="max-width:100%; max-height:100%;">
+            </div>
+            <br>
+            <!-- رفع الصور للادمن فقط -->
+            <div id="adsAdminUpload" style="display:none;">
+                <input type="file" id="adsImageInput" accept="image/*" multiple>
+                <button onclick="addAdsImages()">إضافة صور إعلانات</button>
+                <span id="adsMsg" style="color:green;"></span>
+            </div>
+        </div>
+    </main>
+    <!-- زر واتساب -->
+    <div style="text-align:center; margin: 20px 0;">
+        <a href="https://wa.me/9647838866713?text=مرحباً، أريد الاستفسار عن تطبيق HashTag" target="_blank" style="text-decoration:none;">
+            <button style="background:#25D366;color:#fff;border:none;padding:10px 20px;border-radius:5px;font-size:16px;cursor:pointer;">
+               للطلب تواصل معنا على واتساب 
+            </button>
+        </a>
+    </div>
+    <footer>
+        &copy; 2025 HashTag
+    </footer>
+    <script>
+        // الأقسام
+        const sections = ["تصاميم", "حاسبات", "قرطاسية", "هدايا", "العاب"];
+        let currentSection = "تصاميم";
+
+        // شريط الأقسام: تفعيل القسم المختار وعرض منشوراته فقط
+        function selectSection(section) {
+            currentSection = section;
+            document.querySelectorAll('.section-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent === section);
+            });
+            showApprovedPosts();
+        }
+
+        // إظهار وإخفاء النماذج
+        function hideAll() {
+            document.getElementById('adminRegister').style.display = 'none';
+            document.getElementById('adminLogin').style.display = 'none';
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('userRegister').style.display = 'none';
+            document.getElementById('userLogin').style.display = 'none';
+            document.getElementById('userPanel').style.display = 'none';
+        }
+        function showAdminRegister() { hideAll(); document.getElementById('adminRegister').style.display = 'block'; }
+        function showAdminLogin() { hideAll(); document.getElementById('adminLogin').style.display = 'block'; }
+        function showUserRegister() { hideAll(); document.getElementById('userRegister').style.display = 'block'; }
+        function showUserLogin() { hideAll(); document.getElementById('userLogin').style.display = 'block'; }
+
+        // تغيير صورة الصفحة الرئيسية (للادمن فقط)
+        function changeMainPageImage() {
+            const input = document.getElementById('mainImageInput');
+            const msg = document.getElementById('mainImageMsg');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    localStorage.setItem('mainPageImage', e.target.result);
+                    showMainPageImage();
+                    msg.style.color = 'green';
+                    msg.textContent = 'تم تغيير صورة الصفحة بنجاح!';
+                    input.value = '';
+                };
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                msg.style.color = 'red';
+                msg.textContent = 'يرجى اختيار صورة!';
+            }
+        }
+        // عرض صورة الصفحة الرئيسية عند الدخول
+        function showMainPageImage() {
+            const img = document.getElementById('mainPageImage');
+            const src = localStorage.getItem('mainPageImage');
+            if (img) {
+                if (src) {
+                    img.src = src;
+                    img.style.display = 'block';
+                } else {
+                    img.style.display = 'none';
+                }
+            }
+        }
+
+        // تسجيل الادمن
+        function registerAdmin() {
+            const email = document.getElementById('adminEmailReg').value;
+            const pass = document.getElementById('adminPassReg').value;
+            if (email && pass) {
+                localStorage.setItem('adminEmail', email);
+                localStorage.setItem('adminPass', pass);
+                document.getElementById('adminRegisterMsg').style.color = 'green';
+                document.getElementById('adminRegisterMsg').textContent = 'تم التسجيل بنجاح!';
+                document.getElementById('adminEmailReg').value = '';
+                document.getElementById('adminPassReg').value = '';
+            } else {
+                document.getElementById('adminRegisterMsg').style.color = 'red';
+                document.getElementById('adminRegisterMsg').textContent = 'يرجى إدخال البريد وكلمة المرور!';
+            }
+        }
+
+        // دخول الادمن
+        function adminLogin() {
+            const email = document.getElementById('adminEmailLogin').value;
+            const pass = document.getElementById('adminPassLogin').value;
+            const savedEmail = localStorage.getItem('adminEmail');
+            const savedPass = localStorage.getItem('adminPass');
+            if (email === savedEmail && pass === savedPass) {
+                hideAll();
+                showAdminPanelWithAds();
+                document.getElementById('adminLoginMsg').textContent = '';
+            } else {
+                document.getElementById('adminLoginMsg').textContent = 'بيانات الدخول غير صحيحة!';
+            }
+        }
+        function logoutAdmin() { hideAll(); }
+
+        // نشر منشور نصي أو صورة في قسم معين (للادمن)
+        function adminUploadPost() {
+            const section = document.getElementById('adminSectionSelect').value;
+            const postText = document.getElementById('adminPostText').value;
+            const imageInput = document.getElementById('adminImageInput');
+            const imageText = document.getElementById('imageText').value;
+            const msg = document.getElementById('adminImageMsg');
+            let approvedPosts = JSON.parse(localStorage.getItem('approvedPosts') || '{}');
+            if (!approvedPosts[section]) approvedPosts[section] = [];
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let postHtml = `<div style="text-align:center;margin-bottom:8px;">
+                        ${imageText ? `<div style="font-size:20px;color:red;margin-bottom:5px;">${imageText}</div>` : ""}
+                        <img src="${e.target.result}" alt="صورة" style="max-width:200px;display:block;margin:5px auto;">
+                        ${postText ? `<div style="margin-top:5px;">${postText}</div>` : ""}
+                    </div>`;
+                    approvedPosts[section].push(postHtml);
+                    localStorage.setItem('approvedPosts', JSON.stringify(approvedPosts));
+                    showApprovedPosts();
+                    msg.style.color = 'green';
+                    msg.textContent = 'تم نشر المنشور!';
+                    imageInput.value = '';
+                    document.getElementById('adminPostText').value = '';
+                    document.getElementById('imageText').value = '';
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else if (postText) {
+                let postHtml = `<div style="text-align:center;margin-bottom:8px;">
+                    <div style="margin-top:5px;">${postText}</div>
+                </div>`;
+                approvedPosts[section].push(postHtml);
+                localStorage.setItem('approvedPosts', JSON.stringify(approvedPosts));
+                showApprovedPosts();
+                msg.style.color = 'green';
+                msg.textContent = 'تم نشر المنشور!';
+                document.getElementById('adminPostText').value = '';
+                document.getElementById('imageText').value = '';
+            } else {
+                msg.style.color = 'red';
+                msg.textContent = 'يرجى كتابة منشور أو اختيار صورة!';
+            }
+        }
+
+        // نشر منشور نصي أو صورة في قسم معين (لليوزر)
+        function submitUserPost() {
+            const section = document.getElementById('userSectionSelect').value;
+            const postText = document.getElementById('userPost').value;
+            const imageInput = document.getElementById('userImageInput');
+            const imageText = document.getElementById('userImageText').value;
+            const msg = document.getElementById('userPostMsg');
+            let pendingPosts = JSON.parse(localStorage.getItem('pendingPosts') || '{}');
+            if (!pendingPosts[section]) pendingPosts[section] = [];
+            if (imageInput.files && imageInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let postHtml = `<div style="text-align:center;margin-bottom:8px;">
+                        ${imageText ? `<div style="font-size:20px;color:blue;margin-bottom:5px;">${imageText}</div>` : ""}
+                        <img src="${e.target.result}" alt="صورة" style="max-width:200px;display:block;margin:5px auto;">
+                        ${postText ? `<div style="margin-top:5px;">${postText}</div>` : ""}
+                    </div>`;
+                    pendingPosts[section].push(postHtml);
+                    localStorage.setItem('pendingPosts', JSON.stringify(pendingPosts));
+                    msg.style.color = 'green';
+                    msg.textContent = 'تم إرسال المنشور بانتظار موافقة الادمن.';
+                    imageInput.value = '';
+                    document.getElementById('userPost').value = '';
+                    document.getElementById('userImageText').value = '';
+                    showPendingPosts(); // تحديث فوري للادمن إذا كان مفتوح
+                };
+                reader.readAsDataURL(imageInput.files[0]);
+            } else if (postText) {
+                let postHtml = `<div style="text-align:center;margin-bottom:8px;">
+                    <div style="margin-top:5px;">${postText}</div>
+                </div>`;
+                pendingPosts[section].push(postHtml);
+                localStorage.setItem('pendingPosts', JSON.stringify(pendingPosts));
+                msg.style.color = 'green';
+                msg.textContent = 'تم إرسال المنشور بانتظار موافقة الادمن.';
+                document.getElementById('userPost').value = '';
+                document.getElementById('userImageText').value = '';
+                showPendingPosts();
+            } else {
+                msg.style.color = 'red';
+                msg.textContent = 'يرجى كتابة منشور أو اختيار صورة!';
+            }
+        }
+
+        // تسجيل يوزر
+        function registerUser() {
+            const email = document.getElementById('userEmailReg').value;
+            const pass = document.getElementById('userPassReg').value;
+            if (email && pass) {
+                localStorage.setItem('userEmail', email);
+                localStorage.setItem('userPass', pass);
+                document.getElementById('userRegisterMsg').style.color = 'green';
+                document.getElementById('userRegisterMsg').textContent = 'تم التسجيل بنجاح!';
+                document.getElementById('userEmailReg').value = '';
+                document.getElementById('userPassReg').value = '';
+            } else {
+                document.getElementById('userRegisterMsg').style.color = 'red';
+                document.getElementById('userRegisterMsg').textContent = 'يرجى إدخال البريد وكلمة المرور!';
+            }
+        }
+
+        // دخول يوزر
+        function loginUser() {
+            const email = document.getElementById('userEmailLogin').value;
+            const pass = document.getElementById('userPassLogin').value;
+            const savedEmail = localStorage.getItem('userEmail');
+            const savedPass = localStorage.getItem('userPass');
+            if (email === savedEmail && pass === savedPass) {
+                hideAll();
+                document.getElementById('userPanel').style.display = 'block';
+            } else {
+                document.getElementById('userLoginMsg').textContent = 'بيانات الدخول غير صحيحة!';
+            }
+        }
+        function logoutUser() { hideAll(); }
+
+        // عرض منشورات بانتظار الموافقة للادمن مع زر حذف ورفض
+        function showPendingPosts() {
+            const container = document.getElementById('pendingPostsBySection');
+            if (!container) return;
+            container.innerHTML = '';
+            let pendingPosts = JSON.parse(localStorage.getItem('pendingPosts') || '{}');
+            let hasAny = false;
+            sections.forEach(section => {
+                if (pendingPosts[section] && pendingPosts[section].length > 0) {
+                    hasAny = true;
+                    const secDiv = document.createElement('div');
+                    secDiv.innerHTML = `<div class="section-title">${section}</div>`;
+                    const ul = document.createElement('ul');
+                    pendingPosts[section].forEach((post, idx) => {
+                        const li = document.createElement('li');
+                        li.innerHTML = post + ' ';
+                        // زر موافقة
+                        const approveBtn = document.createElement('button');
+                        approveBtn.textContent = 'موافقة';
+                        approveBtn.onclick = function() { approvePost(section, idx); };
+                        li.appendChild(approveBtn);
+                        // زر حذف/رفض
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'رفض';
+                        deleteBtn.style.marginRight = '8px';
+                        deleteBtn.onclick = function() { deletePendingPost(section, idx); };
+                        li.appendChild(deleteBtn);
+                        ul.appendChild(li);
+                    });
+                    secDiv.appendChild(ul);
+                    container.appendChild(secDiv);
+                }
+            });
+            if (!hasAny) {
+                container.innerHTML = `<div style="color:#888;text-align:center;margin:20px 0;">لا توجد منشورات بانتظار الموافقة.</div>`;
+            }
+        }
+
+        // حذف منشور من قائمة الانتظار
+        function deletePendingPost(section, idx) {
+            let pendingPosts = JSON.parse(localStorage.getItem('pendingPosts') || '{}');
+            if (confirm('هل أنت متأكد من رفض هذا المنشور؟')) {
+                pendingPosts[section].splice(idx, 1);
+                localStorage.setItem('pendingPosts', JSON.stringify(pendingPosts));
+                showPendingPosts();
+            }
+        }
+
+        // موافقة الادمن على منشور
+        function approvePost(section, idx) {
+            let pendingPosts = JSON.parse(localStorage.getItem('pendingPosts') || '{}');
+            let approvedPosts = JSON.parse(localStorage.getItem('approvedPosts') || '{}');
+            if (!approvedPosts[section]) approvedPosts[section] = [];
+            approvedPosts[section].push(pendingPosts[section][idx]);
+            pendingPosts[section].splice(idx, 1);
+            localStorage.setItem('pendingPosts', JSON.stringify(pendingPosts));
+            localStorage.setItem('approvedPosts', JSON.stringify(approvedPosts));
+            showPendingPosts();
+            showApprovedPosts();
+            alert('تمت الموافقة على المنشور!');
+        }
+
+        // عرض المنشورات المقبولة حسب القسم المختار فقط
+        function showApprovedPosts() {
+            const container = document.getElementById('approvedPostsBySection');
+            if (!container) return;
+            container.innerHTML = '';
+            let approvedPosts = JSON.parse(localStorage.getItem('approvedPosts') || '{}');
+            if (approvedPosts[currentSection] && approvedPosts[currentSection].length > 0) {
+                const secDiv = document.createElement('div');
+                secDiv.innerHTML = `<div class="section-title">${currentSection}</div>`;
+                const ul = document.createElement('ul');
+                approvedPosts[currentSection].forEach((post, idx) => {
+                    const li = document.createElement('li');
+                    li.innerHTML = post + ' ';
+                    // زر حذف للادمن فقط
+                    if (document.getElementById('adminPanel').style.display === 'block') {
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.textContent = 'حذف';
+                        deleteBtn.onclick = function() { deleteApprovedPost(currentSection, idx); };
+                        li.appendChild(deleteBtn);
+                    }
+                    ul.appendChild(li);
+                });
+                secDiv.appendChild(ul);
+                container.appendChild(secDiv);
+            } else {
+                container.innerHTML = `<div style="color:#888;text-align:center;margin:20px 0;">لا توجد منشورات في هذا القسم بعد.</div>`;
+            }
+        }
+
+        // حذف منشور أو صورة من المنشورات المقبولة
+        function deleteApprovedPost(section, idx) {
+            let approvedPosts = JSON.parse(localStorage.getItem('approvedPosts') || '{}');
+            if (confirm('هل أنت متأكد من حذف هذا المنشور أو الصورة؟')) {
+                approvedPosts[section].splice(idx, 1);
+                localStorage.setItem('approvedPosts', JSON.stringify(approvedPosts));
+                showApprovedPosts();
+            }
+        }
+
+        // ================== سلايدر الإعلانات ==================
+        function addAdsImages() {
+            const input = document.getElementById('adsImageInput');
+            const msg = document.getElementById('adsMsg');
+            if (input.files && input.files.length > 0) {
+                let adsImages = JSON.parse(localStorage.getItem('adsImages') || '[]');
+                let files = Array.from(input.files);
+                let loaded = 0;
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        adsImages.push(e.target.result);
+                        loaded++;
+                        if (loaded === files.length) {
+                            localStorage.setItem('adsImages', JSON.stringify(adsImages));
+                            msg.style.color = 'green';
+                            msg.textContent = 'تمت إضافة الصور بنجاح!';
+                            input.value = '';
+                            showAdsSlider();
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                });
+            } else {
+                msg.style.color = 'red';
+                msg.textContent = 'يرجى اختيار صورة أو أكثر!';
+            }
+        }
+
+        let adsSliderIndex = 0;
+        let adsSliderInterval = null;
+        function showAdsSlider() {
+            const adsImages = JSON.parse(localStorage.getItem('adsImages') || '[]');
+            const img = document.getElementById('adsSliderImg');
+            if (!img) return;
+            if (adsImages.length === 0) {
+                img.src = '';
+                img.alt = 'لا توجد إعلانات بعد';
+                return;
+            }
+            img.src = adsImages[adsSliderIndex % adsImages.length];
+            img.alt = 'إعلان رقم ' + (adsSliderIndex + 1);
+
+            if (adsSliderInterval) clearInterval(adsSliderInterval);
+            adsSliderInterval = setInterval(() => {
+                adsSliderIndex = (adsSliderIndex + 1) % adsImages.length;
+                img.src = adsImages[adsSliderIndex];
+            }, 3000);
+        }
+
+        function showAdsAdminUpload(show) {
+            document.getElementById('adsAdminUpload').style.display = show ? 'block' : 'none';
+        }
+
+        function showAdminPanelWithAds() {
+            document.getElementById('adminPanel').style.display = 'block';
+            showPendingPosts();
+            showApprovedPosts();
+            showAdsSlider();
+            showAdsAdminUpload(true);
+        }
+
+        function showAdsForAll() {
+            showAdsSlider();
+            showAdsAdminUpload(false);
+        }
+
+        // عند تحميل الصفحة
+        window.onload = function() {
+            showMainPageImage();
+            showAdsForAll();
+            selectSection('تصاميم');
+            showPendingPosts();
+            showApprovedPosts();
+            setInterval(showApprovedPosts, 2000);
+        };
+    </script>
+</body>
+</html>
